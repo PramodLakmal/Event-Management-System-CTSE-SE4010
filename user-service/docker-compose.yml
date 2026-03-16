@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  user-service:
+    build: .
+    container_name: user-service
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/event-management-db
+      - PORT=3001
+      - NODE_ENV=development
+      - JWT_SECRET=your_jwt_secret_key_change_in_production
+      - JWT_EXPIRE=7d
+      - SERVICE_NAME=user-service
+    depends_on:
+      - mongo
+    networks:
+      - event-network
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo-db
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=event-management-db
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - event-network
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+
+networks:
+  event-network:
+    driver: bridge
