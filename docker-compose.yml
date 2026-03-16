@@ -75,7 +75,7 @@ services:
     environment:
       PORT: 3001
       NODE_ENV: development
-      MONGODB_URI: mongodb://mongodb:27017/user-service
+      MONGODB_URI: ${USER_SERVICE_MONGODB_URI}
       JWT_SECRET: your_jwt_secret_key_change_in_production
       JWT_EXPIRE: 7d
       SERVICE_NAME: User Service
