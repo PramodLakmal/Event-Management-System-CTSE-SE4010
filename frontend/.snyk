@@ -1,0 +1,50 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+ignore:
+  # Ignore ReDoS in nth-check (deep dependency from svgr)
+  'SNYK-JS-NTHCHECK-1586032':
+    - '*':
+        reason: 'Unactionable sub-dependency in react-scripts build tool'
+        expires: 2027-01-01T00:00:00.000Z
+  
+  # Ignore Arbitrary Code Injection in serialize-javascript
+  'SNYK-JS-SERIALIZEJAVASCRIPT-570062':
+    - '*':
+        reason: 'Unactionable sub-dependency in react-scripts build tool'
+        expires: 2027-01-01T00:00:00.000Z
+
+  # Ignore XSS in serialize-javascript
+  'SNYK-JS-SERIALIZEJAVASCRIPT-6147607':
+    - '*':
+        reason: 'Unactionable sub-dependency in react-scripts build tool'
+        expires: 2027-01-01T00:00:00.000Z
+
+  # Ignore Uncontrolled Recursion in underscore
+  'SNYK-JS-UNDERSCORE-15369786':
+    - '*':
+        reason: 'Unactionable sub-dependency in react-scripts build tool'
+        expires: 2027-01-01T00:00:00.000Z
+
+  # Ignore Origin Validation in webpack-dev-server
+  'SNYK-JS-WEBPACKDEVSERVER-10300775':
+    - '*':
+        reason: 'Unactionable sub-dependency in react-scripts build tool. Dev only.'
+        expires: 2027-01-01T00:00:00.000Z
+
+  # Ignore Exposed Dangerous Method in webpack-dev-server
+  'SNYK-JS-WEBPACKDEVSERVER-10300777':
+    - '*':
+        reason: 'Unactionable sub-dependency in react-scripts build tool. Dev only.'
+        expires: 2027-01-01T00:00:00.000Z
+
+  # Ignore Uncontrolled Recursion in eslint
+  'SNYK-JS-ESLINT-15102420':
+    - '*':
+        reason: 'Unactionable sub-dependency in react-scripts build tool. Dev only.'
+        expires: 2027-01-01T00:00:00.000Z
+
+  # Ignore Improper Input Validation in postcss
+  'SNYK-JS-POSTCSS-5926692':
+    - '*':
+        reason: 'Unactionable sub-dependency in react-scripts build tool.'
+        expires: 2027-01-01T00:00:00.000Z
