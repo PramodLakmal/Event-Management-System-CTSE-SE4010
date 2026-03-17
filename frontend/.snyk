@@ -48,3 +48,15 @@ ignore:
     - '*':
         reason: 'Unactionable sub-dependency in react-scripts build tool.'
         expires: 2027-01-01T00:00:00.000Z
+
+  # Ignore Missing Release of Resource in inflight
+  'SNYK-JS-INFLIGHT-6095116':
+    - '*':
+        reason: 'Unactionable sub-dependency in react-scripts build tool.'
+        expires: 2027-01-01T00:00:00.000Z
+
+  # Ignore Incorrect Control Flow Scoping in @tootallnate/once
+  'SNYK-JS-TOOTALLNATEONCE-15250612':
+    - '*':
+        reason: 'Unactionable sub-dependency in react-scripts build tool.'
+        expires: 2027-01-01T00:00:00.000Z
