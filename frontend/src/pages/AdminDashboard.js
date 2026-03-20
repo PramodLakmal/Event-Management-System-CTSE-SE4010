@@ -30,12 +30,12 @@ function AdminDashboard({ user }) {
 
   const handleDeleteUser = async (userId) => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
-    
+
     setDeletingId(userId);
     try {
       await userService.deleteUser(userId);
       toast.success('User deleted successfully');
-      setUsers(users.filter(u => u._id !== userId));
+      setUsers(users.filter(u => u.id !== userId));
     } catch (error) {
       toast.error('Failed to delete user');
     } finally {
@@ -50,7 +50,7 @@ function AdminDashboard({ user }) {
   return (
     <div className="admin-container">
       <div className="admin-header-bg"></div>
-      
+
       <div className="container admin-content">
         <div className="admin-header">
           <h1>Admin Dashboard</h1>
@@ -77,7 +77,7 @@ function AdminDashboard({ user }) {
               <tbody>
                 {users.length > 0 ? (
                   users.map(u => (
-                    <tr key={u._id}>
+                    <tr key={u.id}>
                       <td>
                         <div className="user-cell">
                           <div className="user-avatar-small">
@@ -94,13 +94,13 @@ function AdminDashboard({ user }) {
                       </td>
                       <td>{formatDate(u.createdAt)}</td>
                       <td>
-                        {u._id !== user._id && (
-                          <button 
+                        {u.id !== user.id && (
+                          <button
                             className="btn-danger-sm"
-                            onClick={() => handleDeleteUser(u._id)}
-                            disabled={deletingId === u._id}
+                            onClick={() => handleDeleteUser(u.id)}
+                            disabled={deletingId === u.id}
                           >
-                            {deletingId === u._id ? 'Deleting...' : 'Delete'}
+                            {deletingId === u.id ? 'Deleting...' : 'Delete'}
                           </button>
                         )}
                       </td>
