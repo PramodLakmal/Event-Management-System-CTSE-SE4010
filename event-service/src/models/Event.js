@@ -17,15 +17,14 @@ const eventSchema = new mongoose.Schema(
       type: Date,
       required: [true, 'Please provide an event date']
     },
-    location: {
-      type: String,
-      required: [true, 'Please provide a location'],
-      minlength: [3, 'Location must be at least 3 characters']
+    venue: {
+      name: { type: String, required: true },
+      address: { type: String, required: true },
+      capacity: { type: Number, required: true }
     },
-    capacity: {
-      type: Number,
-      required: [true, 'Please provide event capacity'],
-      min: [1, 'Capacity must be at least 1']
+    schedule: {
+      startTime: { type: Date, required: true },
+      endTime: { type: Date, required: true }
     },
     registeredCount: {
       type: Number,

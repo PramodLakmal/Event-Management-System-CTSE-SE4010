@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./src/config/database');
-const eventRoutes = require('./src/routes/eventRoutes');
+const eventManagementRoutes = require('./src/routes/eventManagementRoutes');
 const errorHandler = require('./src/middleware/errorHandler');
 
 const app = express();
@@ -16,7 +16,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/events', eventRoutes);
+
+app.use('/manage', eventManagementRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
