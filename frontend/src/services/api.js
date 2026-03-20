@@ -34,6 +34,18 @@ export const authService = {
     api.get('/auth/verify', { headers: { Authorization: `Bearer ${token}` } })
 };
 
+// User Service (NEW)
+export const userService = {
+  getProfile: () => 
+    api.get('/users/profile/me'),
+  updateProfile: (id, userData) => 
+    api.put(`/users/${id}`, userData),
+  getAllUsers: (page = 1, limit = 10) => 
+    api.get(`/users?page=${page}&limit=${limit}`),
+  deleteUser: (id) => 
+    api.delete(`/users/${id}`)
+};
+
 // Event Service
 export const eventService = {
   getAllEvents: (page = 1, limit = 10) =>
