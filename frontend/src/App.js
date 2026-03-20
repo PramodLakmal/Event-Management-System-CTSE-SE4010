@@ -11,6 +11,8 @@ import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
 import MyRegistrationsPage from './pages/MyRegistrationsPage';
 import NotificationsPage from './pages/NotificationsPage';
+import ProfilePage from './pages/ProfilePage';
+import AdminDashboard from './pages/AdminDashboard';
 import Navigation from './components/Navigation';
 
 function App() {
@@ -84,6 +86,21 @@ function App() {
           path="/notifications"
           element={
             isAuthenticated ? <NotificationsPage user={currentUser} /> : <Navigate to="/login" replace />
+          }
+        />
+        {/* NEW ROUTES */}
+        <Route
+          path="/profile"
+          element={
+            isAuthenticated ? <ProfilePage user={currentUser} /> : <Navigate to="/login" replace />
+          }
+        />
+        <Route
+          path="/admin-dashboard"
+          element={
+            isAuthenticated && currentUser?.role === 'admin' ? 
+              <AdminDashboard user={currentUser} /> : 
+              <Navigate to="/events" replace />
           }
         />
         <Route path="/" element={<Navigate to={isAuthenticated ? '/events' : '/login'} replace />} />

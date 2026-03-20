@@ -38,7 +38,7 @@ const generalLimiter = rateLimit({
 // Rate limiter for auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: 100, // Increased to 100 to prevent lockout during testing
   message: 'Too many login attempts, please try again later'
 });
 
@@ -54,12 +54,15 @@ app.get('/health', (req, res) => {
 });
 
 // Proxy routes to User Service
-app.use('/api/users', authLimiter, proxy(USER_SERVICE_URL, {
+app.use('/api/users', proxy(USER_SERVICE_URL, {
   proxyReqPathResolver: (req) => `/users${req.path}`
 }));
 
+// Apply auth limiter primarily to login
+app.use('/api/auth/login', authLimiter);
+
 // Auth routes map to user service /users path
-app.use('/api/auth', authLimiter, proxy(USER_SERVICE_URL, {
+app.use('/api/auth', proxy(USER_SERVICE_URL, {
   proxyReqPathResolver: (req) => `/users${req.path}`
 }));
 
