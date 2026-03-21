@@ -206,4 +206,26 @@ router.delete('/:id', authenticateToken, userController.deleteUser);
  */
 router.get('/', authenticateToken, userController.getAllUsers);
 
+/**
+ * @swagger
+ * /users/{id}/status:
+ *   put:
+ *     summary: Update user status (admin only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put('/:id/status', authenticateToken, userController.updateUserStatus);
+
+/**
+ * @swagger
+ * /users/{id}/role:
+ *   put:
+ *     summary: Update user role (admin only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put('/:id/role', authenticateToken, userController.updateUserRole);
+
 module.exports = router;

@@ -12,6 +12,8 @@ function ProfilePage({ user }) {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -58,6 +60,27 @@ function ProfilePage({ user }) {
       toast.error('Failed to update profile');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      if (user && user._id) {
+        await userService.deleteUser(user._id);
+        toast.success('Account deleted successfully. Logging out...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        // Small delay to allow the toast to show
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1500);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete account. Please try again.');
+      setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -135,6 +158,46 @@ function ProfilePage({ user }) {
                   </button>
                 </div>
               </form>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="profile-card danger-zone-card">
+              <h3 className="danger-text">Danger Zone</h3>
+              <p className="danger-description">
+                Once you delete your account, there is no going back. Please be certain.
+              </p>
+              
+              {!showDeleteConfirm ? (
+                <button 
+                  type="button" 
+                  className="btn-danger" 
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  Delete Account
+                </button>
+              ) : (
+                <div className="delete-confirmation">
+                  <p><strong>Are you absolutely sure?</strong></p>
+                  <div className="confirmation-actions">
+                    <button 
+                      type="button" 
+                      className="btn-danger" 
+                      onClick={handleDeleteAccount}
+                      disabled={deleting}
+                    >
+                      {deleting ? 'Deleting...' : 'Yes, delete my account'}
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn-outline" 
+                      onClick={() => setShowDeleteConfirm(false)}
+                      disabled={deleting}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

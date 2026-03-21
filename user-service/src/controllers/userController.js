@@ -299,11 +299,25 @@ exports.getAllUsers = async (req, res, next) => {
       });
     }
 
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search, role } = req.query;
     const skip = (page - 1) * limit;
 
-    const users = await User.find().skip(skip).limit(parseInt(limit));
-    const total = await User.countDocuments();
+    const query = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+    if (role && role !== 'all') {
+      query.role = role;
+    }
+
+    const users = await User.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+    const total = await User.countDocuments(query);
 
     res.status(200).json({
       success: true,
@@ -322,6 +336,78 @@ exports.getAllUsers = async (req, res, next) => {
           limit: parseInt(limit),
           pages: Math.ceil(total / limit)
         }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update user status (admin only)
+ * PUT /users/{id}/status
+ */
+exports.updateUserStatus = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'You do not have permission to access this resource' });
+    }
+
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    if (req.user.id === id) {
+      return res.status(400).json({ success: false, message: 'You cannot change your own status' });
+    }
+
+    const user = await User.findByIdAndUpdate(id, { isActive }, { new: true, runValidators: true });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `User account has been ${isActive ? 'activated' : 'suspended'}`,
+      data: {
+        user: { id: user._id, name: user.name, email: user.email, role: user.role, isActive: user.isActive, createdAt: user.createdAt }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update user role (admin only)
+ * PUT /users/{id}/role
+ */
+exports.updateUserRole = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'You do not have permission to access this resource' });
+    }
+
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!['admin', 'user'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid role' });
+    }
+
+    if (req.user.id === id) {
+      return res.status(400).json({ success: false, message: 'You cannot change your own role' });
+    }
+
+    const user = await User.findByIdAndUpdate(id, { role }, { new: true, runValidators: true });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `User role has been changed to ${role}`,
+      data: {
+        user: { id: user._id, name: user.name, email: user.email, role: user.role, isActive: user.isActive, createdAt: user.createdAt }
       }
     });
   } catch (error) {

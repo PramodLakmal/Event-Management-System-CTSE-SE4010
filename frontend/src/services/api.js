@@ -40,10 +40,18 @@ export const userService = {
     api.get('/users/profile/me'),
   updateProfile: (id, userData) => 
     api.put(`/users/${id}`, userData),
-  getAllUsers: (page = 1, limit = 10) => 
-    api.get(`/users?page=${page}&limit=${limit}`),
+  getAllUsers: (page = 1, limit = 10, search = '', role = '') => {
+    let url = `/users?page=${page}&limit=${limit}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (role && role !== 'all') url += `&role=${role}`;
+    return api.get(url);
+  },
   deleteUser: (id) => 
-    api.delete(`/users/${id}`)
+    api.delete(`/users/${id}`),
+  updateUserStatus: (id, isActive) =>
+    api.put(`/users/${id}/status`, { isActive }),
+  updateUserRole: (id, role) =>
+    api.put(`/users/${id}/role`, { role })
 };
 
 // Event Service
