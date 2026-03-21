@@ -255,7 +255,11 @@ function MyRegistrations() {
         try {
           const ev = await axios.get(`${API_URL}/api/events/${reg.eventId}`);
           setEventDetails(prev => ({ ...prev, [reg.eventId]: ev.data }));
-        } catch (e) { }
+        } catch (e) {
+          if (e.response?.status === 404) {
+            setEventDetails(prev => ({ ...prev, [reg.eventId]: { title: 'Event Deleted (No longer exists)', date: new Date().toISOString() } }));
+          }
+        }
       });
     } catch (err) {
       toast.error('Failed to load your registrations');
