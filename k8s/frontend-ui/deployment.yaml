@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: frontend-ui
-        image: sliitprojectmail/event-sync-frontend-ui:latest
+        image: sliitprojectmail/event-sync-frontend-ui:3dc07ea74996ceb39162a8977f4dcd5829887d47
         imagePullPolicy: Always
         ports:
         - containerPort: 5173

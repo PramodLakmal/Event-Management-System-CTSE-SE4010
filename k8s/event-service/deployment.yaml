@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: event-service
-        image: sliitprojectmail/event-sync-event-service:latest
+        image: sliitprojectmail/event-sync-event-service:3dc07ea74996ceb39162a8977f4dcd5829887d47
         imagePullPolicy: Always
         ports:
         - containerPort: 3002
