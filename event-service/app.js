@@ -15,9 +15,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+// Also serve at /events/uploads for requests coming through the api-gateway
+app.use('/events/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
 // Routes
 
-app.use('/manage', eventManagementRoutes);
+app.use('/', eventManagementRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

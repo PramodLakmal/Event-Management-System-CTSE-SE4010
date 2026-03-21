@@ -68,6 +68,7 @@ app.use('/api/auth', proxy(USER_SERVICE_URL, {
 
 // Proxy routes to Event Service
 app.use('/api/events', proxy(EVENT_SERVICE_URL, {
+  parseReqBody: false,
   proxyReqPathResolver: (req) => `/events${req.path}`
 }));
 

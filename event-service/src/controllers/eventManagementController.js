@@ -1,9 +1,24 @@
 const Event = require('../models/Event');
 
+// Helper to parse JSON fields if they are strings (from FormData)
+const parseJsonField = (field) => {
+  if (typeof field === 'string') {
+    try { return JSON.parse(field); } catch (e) { return field; }
+  }
+  return field;
+};
+
 // Event CRUD
 exports.createEvent = async (req, res) => {
     try {
-        const event = await Event.create(req.body);
+        const body = { ...req.body };
+        if (req.file) {
+            body.image = `/uploads/${req.file.filename}`;
+        }
+        if (body.venue) body.venue = parseJsonField(body.venue);
+        if (body.schedule) body.schedule = parseJsonField(body.schedule);
+
+        const event = await Event.create(body);
         res.status(201).json(event);
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -21,7 +36,14 @@ exports.getEvents = async (req, res) => {
 
 exports.updateEvent = async (req, res) => {
     try {
-        const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const body = { ...req.body };
+        if (req.file) {
+            body.image = `/uploads/${req.file.filename}`;
+        }
+        if (body.venue) body.venue = parseJsonField(body.venue);
+        if (body.schedule) body.schedule = parseJsonField(body.schedule);
+        
+        const event = await Event.findByIdAndUpdate(req.params.id, body, { new: true });
         res.json(event);
     } catch (err) {
         res.status(400).json({ error: err.message });

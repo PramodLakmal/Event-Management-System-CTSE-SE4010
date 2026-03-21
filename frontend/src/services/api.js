@@ -52,10 +52,14 @@ export const eventService = {
     api.get(`/events?page=${page}&limit=${limit}`),
   getEventById: (eventId) =>
     api.get(`/events/${eventId}`),
-  createEvent: (eventData) =>
-    api.post('/events', eventData),
-  updateEvent: (eventId, eventData) =>
-    api.put(`/events/${eventId}`, eventData),
+  createEvent: (eventData) => {
+    const config = eventData instanceof FormData ? { headers: { 'Content-Type': undefined } } : {};
+    return api.post('/events', eventData, config);
+  },
+  updateEvent: (eventId, eventData) => {
+    const config = eventData instanceof FormData ? { headers: { 'Content-Type': undefined } } : {};
+    return api.put(`/events/${eventId}`, eventData, config);
+  },
   deleteEvent: (eventId) =>
     api.delete(`/events/${eventId}`),
   getEventAvailability: (eventId) =>
