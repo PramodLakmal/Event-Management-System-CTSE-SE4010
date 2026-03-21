@@ -91,13 +91,13 @@ function ProfilePage() {
             <div className="profile-avatar-large">
               {profileData.name.charAt(0).toUpperCase() || 'U'}
             </div>
-            <h2 style={{color: 'white', margin: '0.5rem 0'}}>{profileData.name}</h2>
+            <h2 style={{margin: '0.5rem 0', color: 'var(--text)'}}>{profileData.name}</h2>
             <p className="profile-role">{user?.role === 'ADMIN' ? 'Administrator' : 'Member'}</p>
           </div>
           
           <div className="profile-main">
             <div className="profile-card">
-              <h3 style={{color: 'white'}}>Personal Information</h3>
+              <h3 style={{color: 'var(--text)'}}>Personal Information</h3>
               <form onSubmit={handleSubmit}>
                 <div className="form-group-row">
                   <div className="form-group">

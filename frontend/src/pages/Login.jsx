@@ -3,6 +3,8 @@ import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import eventSyncLogo from '../assets/evenSync_logo.png';
+import eventSyncText from '../assets/eventSync.png';
 
 const API_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:3000';
 
@@ -35,7 +37,7 @@ function LoginPage() {
     try {
       const response = await axios.post(`${API_URL}/api/users/login`, formData);
       const { user: userData, token } = response.data;
-      
+
       login(userData, token);
       toast.success('Login successful!');
       navigate('/');
@@ -53,28 +55,24 @@ function LoginPage() {
       <div className="auth-banner">
         <div className="banner-overlay"></div>
         <div className="banner-content">
-          <div className="auth-logo-container">
-            <div className="logo-icon">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <span className="logo-text">EventSync</span>
+          <div style={{ marginBottom: '2rem', display: 'inline-flex', background: 'white', borderRadius: '24px', padding: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }}>
+            <img src={eventSyncLogo} alt="EventSync Mark" style={{ height: '70px', width: '70px', objectFit: 'contain' }} />
           </div>
           <h1 className="banner-title">Welcome to the future of events.</h1>
           <p className="banner-subtitle">Create, manage, and discover extraordinary moments with our premium platform.</p>
         </div>
       </div>
-      
+
       <div className="auth-form-side">
         <div className="auth-box">
+          <div style={{ textAlign: 'center' }}>
+            <img src={eventSyncText} alt="EventSync" style={{ height: '80px', width: 'auto' }} />
+          </div>
           <h2>Welcome Back</h2>
           <p className="auth-subtitle">Please enter your details to sign in.</p>
-          
+
           {error && <div className="error-message">{error}</div>}
-          
+
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label htmlFor="email">Email or Username</label>
