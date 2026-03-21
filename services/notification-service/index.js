@@ -20,6 +20,7 @@ const runKafka = async () => {
     try { 
       await consumer.connect();
       await consumer.subscribe({ topic: 'EventRegistered', fromBeginning: true });
+      await consumer.subscribe({ topic: 'UserRegistered', fromBeginning: true });
       await consumer.run({
         eachMessage: async ({ topic, message }) => {
           const payload = JSON.parse(message.value.toString());
@@ -32,6 +33,14 @@ const runKafka = async () => {
             const notification = new Notification({
               userId: payload.userId,
               message: notifMsg
+            });
+            await notification.save();
+          } else if (topic === 'UserRegistered') {
+            console.log("Notification Service Received UserRegistered with payload:", payload);
+            const notifMsg = `Welcome to EventSync, ${payload.name}! Your account has been created successfully.`;
+            const notification = new Notification({
+               userId: payload.userId,
+               message: notifMsg
             });
             await notification.save();
           }

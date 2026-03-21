@@ -52,6 +52,7 @@ services:
       - PORT=3001
       - MONGO_URI=${MONGO_URI_USER}
       - JWT_SECRET=${JWT_SECRET}
+      - KAFKA_BROKER=${KAFKA_BROKER_IP:-kafka:29092}
     networks:
       - event-net
 
