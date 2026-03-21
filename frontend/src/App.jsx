@@ -1,14 +1,18 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Loader2, Bell, Calendar, Trash2, LogOut, PlusCircle, XCircle, CheckCircle, Users } from 'lucide-react';
+import { Loader2, Bell, Calendar, Trash2, LogOut, PlusCircle, XCircle, CheckCircle, Users, UserCircle } from 'lucide-react';
 import './index.css';
 
-const API_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:3000';
+import { AuthProvider, AuthContext } from './context/AuthContext';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
+import UserManagement from './components/UserManagement';
 
-const AuthContext = createContext(null);
+const API_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:3000';
 
 axios.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
@@ -24,32 +28,6 @@ axios.interceptors.response.use(res => res, error => {
   }
   return Promise.reject(error);
 });
-
-function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')));
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
-
-  const login = (userData, authToken) => {
-    setUser(userData);
-    setToken(authToken);
-    localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('token', authToken);
-  };
-
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    toast.info('Logged out successfully');
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
 
 function RequireAuth({ children }) {
   const { user } = useContext(AuthContext);
@@ -94,94 +72,19 @@ function NavBar() {
       </Link>
       {user.role === 'ADMIN' && <Link to="/admin"><Users size={18}/> Admin Hub</Link>}
       <div style={{marginLeft: 'auto', display: 'flex', gap: '1rem', alignItems: 'center'}}>
-        <span style={{opacity: 0.8}}>{user.name} {user.role === 'ADMIN' && <span style={{color:'var(--primary)', fontSize:'0.8em'}}>(Admin)</span>}</span>
-        <button onClick={logout} style={{padding: '0.4rem 1rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)'}}>
-          <LogOut size={16} /> Logout
+        <Link to="/profile" className="profile-nav-link tooltip-container">
+          <UserCircle size={20} />
+          <span style={{opacity: 0.9, fontWeight: 500}}>
+            {user.name.split(' ')[0]} 
+            {user.role === 'ADMIN' && <span style={{color:'var(--primary)', fontSize:'0.8em', marginLeft: '0.3rem'}}>(Admin)</span>}
+          </span>
+        </Link>
+        <button onClick={logout} className="logout-btn">
+          <LogOut size={16} /> <span className="hide-on-mobile">Logout</span>
         </button>
       </div>
     </nav>
   );
-}
-
-function Login() {
-  const [form, setForm] = useState({email: '', password: ''});
-  const [loading, setLoading] = useState(false);
-  const { login, user } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  if (user) return <Navigate to="/" replace />;
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await axios.post(`${API_URL}/api/users/login`, form);
-      login(res.data.user, res.data.token);
-      toast.success('Welcome back!');
-      navigate('/');
-    } catch(err) { 
-      toast.error(err.response?.data?.error || 'Login failed'); 
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="glass-card" style={{maxWidth:'400px', margin: '4rem auto'}}>
-      <div style={{display:'flex', justifyContent:'center', marginBottom: '1rem'}}><Calendar size={48} color="var(--primary)" /></div>
-      <h2 style={{color: 'var(--primary)', textAlign: 'center'}}>EventSync™</h2>
-      <h3 style={{textAlign: 'center', marginBottom: '2rem'}}>Login to your account</h3>
-      <form onSubmit={handleLogin}>
-        <input type="text" placeholder="Email / Username" value={form.email} onChange={e=>setForm({...form, email: e.target.value})} required disabled={loading}/>
-        <input type="password" placeholder="Password" value={form.password} onChange={e=>setForm({...form, password: e.target.value})} required disabled={loading}/>
-        <button style={{width:'100%', marginTop: '1rem'}} type="submit" disabled={loading}>
-          {loading ? <Loader2 className="loader-spin" /> : 'Secure Login'}
-        </button>
-      </form>
-      <p style={{marginTop:'1.5rem', textAlign:'center', opacity: 0.8}}>
-        Don't have an account? <Link to="/register" style={{color:'var(--primary)'}}>Register</Link>
-      </p>
-    </div>
-  )
-}
-
-function Register() {
-  const [form, setForm] = useState({name: '', email: '', password: ''});
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const handleReg = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await axios.post(`${API_URL}/api/users/register`, form);
-      toast.success('Account created successfully! Please login.');
-      navigate('/login');
-    } catch(err) { 
-      toast.error(err.response?.data?.error || 'Registration failed'); 
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="glass-card" style={{maxWidth:'400px', margin: '4rem auto'}}>
-      <div style={{display:'flex', justifyContent:'center', marginBottom: '1rem'}}><Calendar size={48} color="var(--primary)" /></div>
-      <h2 style={{color: 'var(--primary)', textAlign: 'center'}}>EventSync™</h2>
-      <h3 style={{textAlign: 'center', marginBottom: '2rem'}}>Create an Account</h3>
-      <form onSubmit={handleReg}>
-        <input type="text" placeholder="Full Name" value={form.name} onChange={e=>setForm({...form, name: e.target.value})} required disabled={loading}/>
-        <input type="text" placeholder="Email / Username" value={form.email} onChange={e=>setForm({...form, email: e.target.value})} required disabled={loading}/>
-        <input type="password" placeholder="Secure Password" value={form.password} onChange={e=>setForm({...form, password: e.target.value})} minLength={6} required disabled={loading}/>
-        <button style={{width:'100%', marginTop: '1rem'}} type="submit" disabled={loading}>
-          {loading ? <Loader2 className="loader-spin" /> : 'Join the Platform'}
-        </button>
-      </form>
-      <p style={{marginTop:'1.5rem', textAlign:'center', opacity: 0.8}}>
-        Already have an account? <Link to="/login" style={{color:'var(--primary)'}}>Login</Link>
-      </p>
-    </div>
-  )
 }
 
 function Dashboard() {
@@ -209,7 +112,7 @@ function Dashboard() {
     try {
       await axios.post(`${API_URL}/api/registrations`, { eventId });
       toast.success('Registered! We are syncing your spot.');
-      fetchEvents(); // Refresh to see capacity counts update dynamically
+      fetchEvents();
     } catch(err) { 
       toast.error(err.response?.data?.error || 'Registration failed'); 
     } finally {
@@ -248,7 +151,6 @@ function Dashboard() {
                   <h3 style={{marginTop: 0, color: 'var(--primary)'}}>{ev.title}</h3>
                   <p style={{fontSize: '0.9rem', opacity: 0.8, flex: 1}}>{ev.description || 'No description provided.'}</p>
                   
-                  {/* Capacity Bar using CQRS data */}
                   {ev.capacity > 0 && (
                     <div style={{margin: '1rem 0'}}>
                         <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem'}}>
@@ -288,21 +190,11 @@ function Dashboard() {
 }
 
 function AdminHub() {
-  const [users, setUsers] = useState([]);
   const [form, setForm] = useState({title: '', date: '', location: '', description: '', imageUrl: '', capacity: ''});
   const [creating, setCreating] = useState(false);
   const { user } = useContext(AuthContext);
 
-  if (user?.role !== 'ADMIN') return <Navigate to="/" replace />; // Strictly protect route
-
-  const fetchUsers = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/api/users`);
-      setUsers(res.data);
-    } catch(err) {} 
-  };
-
-  useEffect(() => { fetchUsers(); }, []);
+  if (user?.role !== 'ADMIN') return <Navigate to="/" replace />;
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -317,15 +209,6 @@ function AdminHub() {
     } finally {
       setCreating(false);
     }
-  }
-
-  const handleDeleteUser = async (id) => {
-    if(!window.confirm('Ban this user?')) return;
-    try {
-      await axios.delete(`${API_URL}/api/users/${id}`);
-      toast.info('User removed.');
-      fetchUsers();
-    } catch(err) { toast.error('Failed to remove user'); }
   }
 
   return (
@@ -351,22 +234,7 @@ function AdminHub() {
         </form>
       </div>
 
-      <div className="glass-card">
-        <h2><Users style={{verticalAlign: 'middle', marginRight: '0.5rem'}}/> User Management</h2>
-        <div style={{marginTop: '1.5rem'}}>
-          {users.map(u => (
-            <div key={u._id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              <div>
-                <strong>{u.name}</strong> <span style={{opacity: 0.5}}>- {u.email}</span>
-                {u.role === 'ADMIN' && <span style={{background: 'var(--primary)', color:'white', padding: '0.1rem 0.5rem', borderRadius: '8px', fontSize: '0.8rem', marginLeft: '0.5rem'}}>ADMIN</span>}
-              </div>
-              {u.role !== 'ADMIN' && (
-                <button onClick={()=>handleDeleteUser(u._id)} className="btn-danger" style={{padding: '0.3rem', fontSize: '0.8rem'}}>Ban User</button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      <UserManagement />
     </div>
   )
 }
@@ -537,6 +405,7 @@ function AppContent() {
         <Route path="/my-events" element={<RequireAuth><MyRegistrations /></RequireAuth>} />
         <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
         <Route path="/admin" element={<RequireAuth><AdminHub /></RequireAuth>} />
+        <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
       </Routes>
     </div>
   );
