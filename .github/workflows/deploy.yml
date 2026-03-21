@@ -8,7 +8,7 @@ jobs:
   sast-security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/node@master
         continue-on-error: true
@@ -34,112 +34,34 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
-  deploy-kafka:
+  deploy-aks:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Deploy Message Broker
-        uses: appleboy/ssh-action@v1.0.3
+      
+      - name: Azure Cloud Login
+        uses: azure/login@v1
         with:
-          host: ${{ secrets.IP_KAFKA }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            sudo apt update && sudo apt install -y docker.io docker-compose-v2
-            if [ ! -f /swapfile ]; then
-              sudo fallocate -l 2G /swapfile
-              sudo chmod 600 /swapfile
-              sudo mkswap /swapfile
-              sudo swapon /swapfile
-              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-            fi
-            echo "KAFKA_PRIVATE_IP=172.31.27.73" > .env
-            git clone https://github.com/${{ github.repository }}.git app || true
-            cd app && git pull origin master || true
-            cp ../.env .
-            sudo docker compose up -d kafka
-
-  deploy-microservices:
-    needs: deploy-kafka
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:    
-        include:
-          - name: user-service
-            ip_secret: IP_USER
-          - name: event-service
-            ip_secret: IP_EVENT
-          - name: registration-service
-            ip_secret: IP_REGISTRATION
-          - name: notification-service
-            ip_secret: IP_NOTIFICATION
-    steps:
-      - name: Deploy Service (${{ matrix.name }})
-        uses: appleboy/ssh-action@v1.0.3
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          
+      - name: Setup Native Kubectl
+        uses: azure/setup-kubectl@v3
+        
+      - name: Secure AKS Context Attachment
+        uses: azure/aks-set-context@v3
         with:
-          host: ${{ secrets[matrix.ip_secret] }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            sudo apt update && sudo apt install -y docker.io docker-compose-v2
-            cat << 'EOF' > .env
-            MONGO_URI_USER=${{ secrets.MONGO_URI_USER }}
-            MONGO_URI_EVENT=${{ secrets.MONGO_URI_EVENT }}
-            MONGO_URI_REGISTRATION=${{ secrets.MONGO_URI_REGISTRATION }}
-            MONGO_URI_NOTIFICATION=${{ secrets.MONGO_URI_NOTIFICATION }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            KAFKA_BROKER_IP=172.31.27.73:9092
-            EOF
-            echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" >> .env
-            git clone https://github.com/${{ github.repository }}.git app || true
-            cd app && git pull origin master || true
-            cp ../.env .
-            sudo --preserve-env=DOCKER_USERNAME docker compose pull ${{ matrix.name }}
-            sudo --preserve-env=DOCKER_USERNAME docker compose up -d ${{ matrix.name }}
-
-  deploy-gateway:
-    needs: deploy-microservices
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy API Gateway
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.IP_GATEWAY }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            sudo apt update && sudo apt install -y docker.io docker-compose-v2
-            cat << 'EOF' > .env
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            USER_SERVICE_URL=http://172.31.28.24:3001
-            EVENT_SERVICE_URL=http://172.31.20.22:3002
-            REGISTRATION_SERVICE_URL=http://172.31.17.31:3003
-            NOTIFICATION_SERVICE_URL=http://172.31.28.150:3004
-            EOF
-            echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" >> .env
-            git clone https://github.com/${{ github.repository }}.git app || true
-            cd app && git pull origin master || true
-            cp ../.env .
-            sudo --preserve-env=DOCKER_USERNAME docker compose pull api-gateway
-            sudo --preserve-env=DOCKER_USERNAME docker compose up -d api-gateway
-
-  deploy-frontend:
-    needs: deploy-gateway
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy React UI
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.IP_FRONTEND }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            sudo apt update && sudo apt install -y docker.io docker-compose-v2
-            echo "VITE_API_GATEWAY_URL=http://67.202.26.246:3000" > .env
-            echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" >> .env
-            git clone https://github.com/${{ github.repository }}.git app || true
-            cd app && git pull origin master || true
-            cp ../.env .
-            sudo --preserve-env=DOCKER_USERNAME docker compose pull frontend
-            sudo --preserve-env=DOCKER_USERNAME docker compose up -d frontend
+          resource-group: EventSyncRG3
+          cluster-name: EventSyncAKSCluster
+          
+      - name: Deploy Kubernetes Manifests
+        run: |
+          # Securely inject GitHub Secrets dynamically before deployment
+          envsubst < k8s-manifest.yaml > k8s-applied.yaml
+          kubectl apply -f k8s-applied.yaml
+        env:
+          MONGO_URI_USER: ${{ secrets.MONGO_URI_USER }}
+          MONGO_URI_EVENT: ${{ secrets.MONGO_URI_EVENT }}
+          MONGO_URI_REGISTRATION: ${{ secrets.MONGO_URI_REGISTRATION }}
+          MONGO_URI_NOTIFICATION: ${{ secrets.MONGO_URI_NOTIFICATION }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}

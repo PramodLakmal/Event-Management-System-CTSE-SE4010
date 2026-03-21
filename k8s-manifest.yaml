@@ -1,0 +1,343 @@
+# Kafka
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: kafka
+        image: docker.io/confluentinc/cp-kafka:7.5.0
+        ports:
+        - containerPort: 9092
+        env:
+        - name: CLUSTER_ID
+          value: 'MkU3OEVBNTcwNTJENDM2Qk'
+        - name: KAFKA_NODE_ID
+          value: '1'
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+        - name: KAFKA_LISTENERS
+          value: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092'
+        - name: KAFKA_CONTROLLER_LISTENER_NAMES
+          value: 'CONTROLLER'
+        - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+          value: '1@localhost:29093'
+        - name: KAFKA_PROCESS_ROLES
+          value: 'broker,controller'
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: '1'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9092
+    targetPort: 9092
+    name: client
+  - port: 29092
+    targetPort: 29092
+    name: internal
+  selector:
+    app: kafka
+---
+# User Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: docker.io/sliitprojectmail/event-sync-user-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3001
+        env:
+        - name: PORT
+          value: "3001"
+        - name: MONGO_URI
+          value: "${MONGO_URI_USER}"
+        - name: JWT_SECRET
+          value: "${JWT_SECRET}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3001
+    targetPort: 3001
+  selector:
+    app: user-service
+---
+# Event Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: event-service
+  template:
+    metadata:
+      labels:
+        app: event-service
+    spec:
+      containers:
+      - name: event-service
+        image: docker.io/sliitprojectmail/event-sync-event-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3002
+        env:
+        - name: PORT
+          value: "3002"
+        - name: MONGO_URI
+          value: "${MONGO_URI_EVENT}"
+        - name: KAFKA_BROKER
+          value: "kafka:9092"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: event-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3002
+    targetPort: 3002
+  selector:
+    app: event-service
+---
+# Registration Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registration-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registration-service
+  template:
+    metadata:
+      labels:
+        app: registration-service
+    spec:
+      containers:
+      - name: registration-service
+        image: docker.io/sliitprojectmail/event-sync-registration-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3003
+        env:
+        - name: PORT
+          value: "3003"
+        - name: MONGO_URI
+          value: "${MONGO_URI_REGISTRATION}"
+        - name: USER_SERVICE_URL
+          value: "http://user-service:3001"
+        - name: EVENT_SERVICE_URL
+          value: "http://event-service:3002"
+        - name: KAFKA_BROKER
+          value: "kafka:9092"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registration-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3003
+    targetPort: 3003
+  selector:
+    app: registration-service
+---
+# Notification Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+      - name: notification-service
+        image: docker.io/sliitprojectmail/event-sync-notification-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3004
+        env:
+        - name: PORT
+          value: "3004"
+        - name: MONGO_URI
+          value: "${MONGO_URI_NOTIFICATION}"
+        - name: KAFKA_BROKER
+          value: "kafka:9092"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3004
+    targetPort: 3004
+  selector:
+    app: notification-service
+---
+# API Gateway
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: docker.io/sliitprojectmail/event-sync-api-gateway:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: USER_SERVICE_URL
+          value: "http://user-service:3001"
+        - name: EVENT_SERVICE_URL
+          value: "http://event-service:3002"
+        - name: REGISTRATION_SERVICE_URL
+          value: "http://registration-service:3003"
+        - name: NOTIFICATION_SERVICE_URL
+          value: "http://notification-service:3004"
+        - name: JWT_SECRET
+          value: "${JWT_SECRET}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+  selector:
+    app: api-gateway
+---
+# Frontend UI
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend-ui
+  template:
+    metadata:
+      labels:
+        app: frontend-ui
+    spec:
+      containers:
+      - name: frontend-ui
+        image: docker.io/sliitprojectmail/event-sync-frontend-ui:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5173
+        env:
+        - name: VITE_API_GATEWAY_URL
+          value: "/api"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-ui
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 5173
+  selector:
+    app: frontend-ui
+---
+# Nginx Ingress Route
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: event-sync-ingress-api
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /api/$2
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /api(/api)?/(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: event-sync-ingress-ui
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-ui
+            port:
+              number: 80
