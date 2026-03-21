@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  labels:
+    app: notification-service
+    component: microservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+        component: microservice
+    spec:
+      containers:
+      - name: notification-service
+        image: sliitprojectmail/event-sync-notification-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3004
+        env:
+        - name: PORT
+          value: "3004"
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: MONGO_URI_NOTIFICATION
+        - name: KAFKA_BROKER
+          value: "kafka-svc:9092"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3004
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3004
+          initialDelaySeconds: 20
+          periodSeconds: 30

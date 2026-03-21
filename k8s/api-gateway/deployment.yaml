@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+    component: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+        component: gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: sliitprojectmail/event-sync-api-gateway:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: USER_SERVICE_URL
+          value: "http://user-service:3001"
+        - name: EVENT_SERVICE_URL
+          value: "http://event-service:3002"
+        - name: REGISTRATION_SERVICE_URL
+          value: "http://registration-service:3003"
+        - name: NOTIFICATION_SERVICE_URL
+          value: "http://notification-service:3004"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: JWT_SECRET
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 30

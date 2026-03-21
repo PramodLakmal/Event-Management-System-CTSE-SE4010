@@ -1,0 +1,22 @@
+# ArgoCD App of Apps - Root Application
+# Apply this ONCE manually: kubectl apply -f argocd/root-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: event-sync-root
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/PramodLakmal/Event-Management-System-CTSE-SE4010.git'
+    targetRevision: HEAD
+    path: 'argocd/apps'
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
