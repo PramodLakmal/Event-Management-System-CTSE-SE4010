@@ -3,7 +3,6 @@ import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import './AuthPages.css';
 
 const API_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:3000';
 

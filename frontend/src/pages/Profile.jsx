@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import './ProfilePage.css';
 
 const API_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:3000';
 
