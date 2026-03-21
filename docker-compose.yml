@@ -1,268 +1,124 @@
-services:
-  # Kafka Zookeeper
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
-    networks:
-      - event-network
-    healthcheck:
-      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+version: '3.8'
 
-  # Kafka Broker
+services:
+  # Kafka (KRaft mode - no Zookeeper required)
   kafka:
-    image: confluentinc/cp-kafka:7.4.0
+    image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
-    depends_on:
-      zookeeper:
-        condition: service_healthy
     ports:
       - "9092:9092"
-      - "29092:29092"
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://${KAFKA_PRIVATE_IP:-localhost}:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     networks:
-      - event-network
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 29092"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 40s
-
-  # MongoDB
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_DATABASE: event-management
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - event-network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # User Service
-  user-service:
-    build:
-      context: ./user-service
-      dockerfile: Dockerfile
-    container_name: user-service
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    ports:
-      - "3001:3001"
-    environment:
-      PORT: 3001
-      NODE_ENV: development
-      MONGODB_URI: ${USER_SERVICE_MONGODB_URI}
-      JWT_SECRET: your_jwt_secret_key_change_in_production
-      JWT_EXPIRE: 7d
-      SERVICE_NAME: User Service
-    networks:
-      - event-network
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'node -e "require(''http'').get(''http://localhost:3001/health'', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"',
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 8
-      start_period: 30s
-    restart: unless-stopped
-
-  # Event Service
-  event-service:
-    build:
-      context: ./event-service
-      dockerfile: Dockerfile
-    container_name: event-service
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    ports:
-      - "3002:3002"
-    environment:
-      PORT: 3002
-      NODE_ENV: development
-      MONGODB_URI: mongodb://mongodb:27017/event-service
-      KAFKA_BROKERS: kafka:29092
-      SERVICE_NAME: Event Service
-    networks:
-      - event-network
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'node -e "require(''http'').get(''http://localhost:3002/health'', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"',
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 8
-      start_period: 30s
-    restart: unless-stopped
-
-  # Registration Service
-  registration-service:
-    build:
-      context: ./registration-service
-      dockerfile: Dockerfile
-    container_name: registration-service
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      user-service:
-        condition: service_healthy
-      event-service:
-        condition: service_healthy
-    ports:
-      - "3003:3003"
-    environment:
-      PORT: 3003
-      NODE_ENV: development
-      MONGODB_URI: mongodb://mongodb:27017/registration-service
-      KAFKA_BROKERS: kafka:29092
-      USER_SERVICE_URL: http://user-service:3001
-      EVENT_SERVICE_URL: http://event-service:3002
-      SERVICE_NAME: Registration Service
-    networks:
-      - event-network
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'node -e "require(''http'').get(''http://localhost:3003/health'', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"',
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 8
-      start_period: 30s
-    restart: unless-stopped
-
-  # Notification Service
-  notification-service:
-    build:
-      context: ./notification-service
-      dockerfile: Dockerfile
-    container_name: notification-service
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    ports:
-      - "3004:3004"
-    environment:
-      PORT: 3004
-      NODE_ENV: development
-      MONGODB_URI: mongodb://mongodb:27017/notification-service
-      KAFKA_BROKERS: kafka:29092
-      KAFKA_CLIENT_ID: notification-service
-      KAFKA_GROUP_ID: notification-group
-      SERVICE_NAME: Notification Service
-    networks:
-      - event-network
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'node -e "require(''http'').get(''http://localhost:3004/health'', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"',
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 8
-      start_period: 30s
-    restart: unless-stopped
+      - event-net
 
   # API Gateway
   api-gateway:
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
+    image: ${DOCKER_USERNAME:-local}/event-sync-api-gateway:latest
     container_name: api-gateway
-    depends_on:
-      - user-service
-      - event-service
-      - registration-service
-      - notification-service
     ports:
-      - "3005:3000"
+      - "3000:3000"
     environment:
-      PORT: 3000
-      NODE_ENV: development
-      USER_SERVICE_URL: http://user-service:3001
-      EVENT_SERVICE_URL: http://event-service:3002
-      REGISTRATION_SERVICE_URL: http://registration-service:3003
-      NOTIFICATION_SERVICE_URL: http://notification-service:3004
-      SERVICE_NAME: API Gateway
+      - USER_SERVICE_URL=${USER_SERVICE_URL}
+      - EVENT_SERVICE_URL=${EVENT_SERVICE_URL}
+      - REGISTRATION_SERVICE_URL=${REGISTRATION_SERVICE_URL}
+      - NOTIFICATION_SERVICE_URL=${NOTIFICATION_SERVICE_URL}
+      - JWT_SECRET=${JWT_SECRET}
     networks:
-      - event-network
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'node -e "require(''http'').get(''http://localhost:3000/health'', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"',
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 8
-      start_period: 30s
-    restart: unless-stopped
+      - event-net
 
-  # Frontend (React + Nginx)
+  # Microservice 1: User Service
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    image: ${DOCKER_USERNAME:-local}/event-sync-user-service:latest
+    container_name: user-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - MONGO_URI=${MONGO_URI_USER}
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - event-net
+
+  # Microservice 2: Event Service
+  event-service:
+    build:
+      context: ./services/event-service
+      dockerfile: Dockerfile
+    image: ${DOCKER_USERNAME:-local}/event-sync-event-service:latest
+    container_name: event-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - MONGO_URI=${MONGO_URI_EVENT}
+      - KAFKA_BROKER=${KAFKA_BROKER_IP:-kafka:29092}
+    networks:
+      - event-net
+
+  # Microservice 3: Registration Service
+  registration-service:
+    build:
+      context: ./services/registration-service
+      dockerfile: Dockerfile
+    image: ${DOCKER_USERNAME:-local}/event-sync-registration-service:latest
+    container_name: registration-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - MONGO_URI=${MONGO_URI_REGISTRATION}
+      - KAFKA_BROKER=${KAFKA_BROKER_IP:-kafka:29092}
+      - USER_SERVICE_URL=http://user-service:3001
+      - EVENT_SERVICE_URL=http://event-service:3002
+    networks:
+      - event-net
+
+  # Microservice 4: Notification Service
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    image: ${DOCKER_USERNAME:-local}/event-sync-notification-service:latest
+    container_name: notification-service
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - MONGO_URI=${MONGO_URI_NOTIFICATION}
+      - KAFKA_BROKER=${KAFKA_BROKER_IP:-kafka:29092}
+    networks:
+      - event-net
+
+  # Frontend (Vite)
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: frontend
-    depends_on:
-      - api-gateway
+    image: ${DOCKER_USERNAME:-local}/event-sync-frontend-ui:latest
+    container_name: frontend-ui
     ports:
-      - "3006:80"
+      - "5173:5173"
+    environment:
+      - VITE_API_GATEWAY_URL=${VITE_API_GATEWAY_URL:-http://localhost:3000}
     networks:
-      - event-network
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget --quiet --tries=1 --spider http://localhost:80/ || exit 1",
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 8
-      start_period: 30s
-    restart: unless-stopped
+      - event-net
 
 networks:
-  event-network:
+  event-net:
     driver: bridge
-
-volumes:
-  mongodb_data:
-    driver: local
