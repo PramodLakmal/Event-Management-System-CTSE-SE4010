@@ -74,7 +74,7 @@ spec:
     spec:
       containers:
       - name: user-service
-        image: docker.io/sliitprojectmail/event-sync-user-service:latest
+        image: docker.io/sliitprojectmail/event-sync-user-service:cac15b36f45dab8acb84a06bb238e751c88cf964
         imagePullPolicy: Always
         ports:
         - containerPort: 3001
@@ -121,7 +121,7 @@ spec:
     spec:
       containers:
       - name: event-service
-        image: docker.io/sliitprojectmail/event-sync-event-service:latest
+        image: docker.io/sliitprojectmail/event-sync-event-service:cac15b36f45dab8acb84a06bb238e751c88cf964
         imagePullPolicy: Always
         ports:
         - containerPort: 3002
@@ -165,7 +165,7 @@ spec:
     spec:
       containers:
       - name: registration-service
-        image: docker.io/sliitprojectmail/event-sync-registration-service:latest
+        image: docker.io/sliitprojectmail/event-sync-registration-service:cac15b36f45dab8acb84a06bb238e751c88cf964
         imagePullPolicy: Always
         ports:
         - containerPort: 3003
@@ -213,7 +213,7 @@ spec:
     spec:
       containers:
       - name: notification-service
-        image: docker.io/sliitprojectmail/event-sync-notification-service:latest
+        image: docker.io/sliitprojectmail/event-sync-notification-service:cac15b36f45dab8acb84a06bb238e751c88cf964
         imagePullPolicy: Always
         ports:
         - containerPort: 3004
@@ -257,7 +257,7 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: docker.io/sliitprojectmail/event-sync-api-gateway:latest
+        image: docker.io/sliitprojectmail/event-sync-api-gateway:cac15b36f45dab8acb84a06bb238e751c88cf964
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
@@ -305,7 +305,7 @@ spec:
     spec:
       containers:
       - name: frontend-ui
-        image: docker.io/sliitprojectmail/event-sync-frontend-ui:latest
+        image: docker.io/sliitprojectmail/event-sync-frontend-ui:cac15b36f45dab8acb84a06bb238e751c88cf964
         imagePullPolicy: Always
         ports:
         - containerPort: 5173
