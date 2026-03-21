@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 
 const connectDB = require('./config/db');
+const { connectProducer } = require('./config/kafka');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 
@@ -10,6 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 connectDB();
+connectProducer();
 
 app.get('/health', (req, res) => res.json({ status: 'User Service is running' }));
 
