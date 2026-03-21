@@ -82,9 +82,15 @@ spec:
         - name: PORT
           value: "3001"
         - name: MONGO_URI
-          value: "${MONGO_URI_USER}"
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: MONGO_URI_USER
         - name: JWT_SECRET
-          value: "${JWT_SECRET}"
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: JWT_SECRET
 ---
 apiVersion: v1
 kind: Service
@@ -123,7 +129,10 @@ spec:
         - name: PORT
           value: "3002"
         - name: MONGO_URI
-          value: "${MONGO_URI_EVENT}"
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: MONGO_URI_EVENT
         - name: KAFKA_BROKER
           value: "kafka-svc:9092"
 ---
@@ -164,7 +173,10 @@ spec:
         - name: PORT
           value: "3003"
         - name: MONGO_URI
-          value: "${MONGO_URI_REGISTRATION}"
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: MONGO_URI_REGISTRATION
         - name: USER_SERVICE_URL
           value: "http://user-service:3001"
         - name: EVENT_SERVICE_URL
@@ -209,7 +221,10 @@ spec:
         - name: PORT
           value: "3004"
         - name: MONGO_URI
-          value: "${MONGO_URI_NOTIFICATION}"
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: MONGO_URI_NOTIFICATION
         - name: KAFKA_BROKER
           value: "kafka-svc:9092"
 ---
@@ -256,7 +271,10 @@ spec:
         - name: NOTIFICATION_SERVICE_URL
           value: "http://notification-service:3004"
         - name: JWT_SECRET
-          value: "${JWT_SECRET}"
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: JWT_SECRET
 ---
 apiVersion: v1
 kind: Service

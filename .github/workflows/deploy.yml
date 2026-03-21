@@ -34,34 +34,4 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
-  deploy-aks:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Azure Cloud Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-          
-      - name: Setup Native Kubectl
-        uses: azure/setup-kubectl@v3
-        
-      - name: Secure AKS Context Attachment
-        uses: azure/aks-set-context@v3
-        with:
-          resource-group: EventSyncRG3
-          cluster-name: EventSyncAKSCluster
-          
-      - name: Deploy Kubernetes Manifests
-        run: |
-          # Securely inject GitHub Secrets dynamically before deployment
-          envsubst < k8s-manifest.yaml > k8s-applied.yaml
-          kubectl apply -f k8s-applied.yaml
-        env:
-          MONGO_URI_USER: ${{ secrets.MONGO_URI_USER }}
-          MONGO_URI_EVENT: ${{ secrets.MONGO_URI_EVENT }}
-          MONGO_URI_REGISTRATION: ${{ secrets.MONGO_URI_REGISTRATION }}
-          MONGO_URI_NOTIFICATION: ${{ secrets.MONGO_URI_NOTIFICATION }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
