@@ -1,9 +1,9 @@
 import { useState, useEffect, useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Loader2, Bell, Calendar, Trash2, LogOut, PlusCircle, XCircle, CheckCircle, Users, UserCircle } from 'lucide-react';
+import { Loader2, Bell, LogOut, XCircle, CheckCircle, Users, UserCircle } from 'lucide-react';
 import './index.css';
 import eventSyncText from './assets/eventSync.png';
 
@@ -93,8 +93,6 @@ function Dashboard() {
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [processingId, setProcessingId] = useState(null);
 
-  const { user } = useContext(AuthContext);
-
   const fetchEvents = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/events`);
@@ -119,21 +117,7 @@ function Dashboard() {
     } finally {
       setProcessingId(null);
     }
-  }
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this event?')) return;
-    setProcessingId(id);
-    try {
-      await axios.delete(`${API_URL}/api/events/${id}`);
-      toast.info('Event deleted successfully.');
-      fetchEvents();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to delete');
-    } finally {
-      setProcessingId(null);
-    }
-  }
+  };
 
   return (
     <div>
@@ -143,7 +127,8 @@ function Dashboard() {
       ) : (
         <div className="event-grid">
           {events.map(ev => {
-            const coverStyle = ev.imageUrl ? { backgroundImage: `url(${ev.imageUrl})` } : { background: 'linear-gradient(135deg, var(--primary) 0%, #a855f7 100%)' };
+            const actualImgUrl = ev.imageUrl?.startsWith('/') ? `${API_URL}${ev.imageUrl}` : ev.imageUrl;
+            const coverStyle = actualImgUrl ? { backgroundImage: `url(${actualImgUrl})` } : { background: 'linear-gradient(135deg, var(--primary) 0%, #a855f7 100%)' };
             const full = ev.capacity && ev.registrationsCount >= ev.capacity;
             return (
               <div key={ev._id} className="glass-card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -151,7 +136,6 @@ function Dashboard() {
                 <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <h3 style={{ marginTop: 0, color: 'var(--primary)' }}>{ev.title}</h3>
                   <p style={{ fontSize: '0.9rem', opacity: 0.8, flex: 1 }}>{ev.description || 'No description provided.'}</p>
-
                   {ev.capacity > 0 && (
                     <div style={{ margin: '1rem 0' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
@@ -163,81 +147,29 @@ function Dashboard() {
                       </div>
                     </div>
                   )}
-
                   <div style={{ margin: '1rem 0', opacity: 0.9, fontSize: '0.95rem' }}>
                     <p style={{ margin: '0.5rem 0' }}><strong>📅 Date:</strong> {new Date(ev.date).toLocaleDateString()}</p>
+                    {(ev.startTime || ev.endTime) && (
+                      <p style={{ margin: '0.5rem 0' }}><strong>⏰ Time:</strong> {ev.startTime || '--'} to {ev.endTime || '--'}</p>
+                    )}
                     <p style={{ margin: '0.5rem 0' }}><strong>📍 Location:</strong> {ev.location}</p>
                   </div>
-
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
                     <button onClick={() => handleRegister(ev._id)} style={{ flex: 1 }} disabled={processingId === ev._id || full}>
                       {processingId === ev._id ? <Loader2 className="loader-spin" size={18} /> : full ? 'Fully Booked' : 'Register Now'}
                     </button>
-                    {(user.role === 'ADMIN') && (
-                      <button onClick={() => handleDelete(ev._id)} className="btn-danger" style={{ flex: 0.5 }} disabled={processingId === ev._id}>
-                        <Trash2 size={18} />
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
-            )
+            );
           })}
-          {events.length === 0 && <div className="glass-card" style={{ opacity: 0.6, width: '100%', gridColumn: '1 / -1', textAlign: 'center' }}>No events available right now.</div>}
+          {events.length === 0 && (
+            <div className="glass-card" style={{ opacity: 0.6, width: '100%', gridColumn: '1 / -1', textAlign: 'center' }}>No events available right now.</div>
+          )}
         </div>
       )}
     </div>
-  )
-}
-
-function AdminHub() {
-  const [form, setForm] = useState({ title: '', date: '', location: '', description: '', imageUrl: '', capacity: '' });
-  const [creating, setCreating] = useState(false);
-  const { user } = useContext(AuthContext);
-
-  if (user?.role !== 'ADMIN') return <Navigate to="/" replace />;
-
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    setCreating(true);
-    try {
-      const payload = { ...form, capacity: form.capacity ? parseInt(form.capacity) : undefined };
-      await axios.post(`${API_URL}/api/events`, payload);
-      setForm({ title: '', date: '', location: '', description: '', imageUrl: '', capacity: '' });
-      toast.success('Admin: Event published securely.');
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to create event');
-    } finally {
-      setCreating(false);
-    }
-  }
-
-  return (
-    <div>
-      <div className="glass-card" style={{ marginBottom: '3rem' }}>
-        <h2><PlusCircle style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Organize an Event (Admin Only)</h2>
-        <form onSubmit={handleCreate} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '1rem' }}>
-          <div style={{ flex: '1 1 300px' }}>
-            <input type="text" placeholder="Event Title *" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
-            <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} required />
-            <input type="text" placeholder="Location *" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} required />
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <input type="number" placeholder="Max Capacity (optional)" value={form.capacity} onChange={e => setForm({ ...form, capacity: e.target.value })} min="1" style={{ flex: 1 }} />
-              <input type="url" placeholder="Cover Image URL (optional)" value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} style={{ flex: 2 }} />
-            </div>
-          </div>
-          <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column' }}>
-            <textarea placeholder="Event Description..." value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ flex: 1, minHeight: '120px' }} />
-            <button type="submit" disabled={creating} style={{ width: '100%' }}>
-              {creating ? <Loader2 className="loader-spin" /> : 'Publish Event'}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <UserManagement />
-    </div>
-  )
+  );
 }
 
 function MyRegistrations() {
@@ -250,7 +182,6 @@ function MyRegistrations() {
     try {
       const res = await axios.get(`${API_URL}/api/registrations/my-registrations`);
       setRegs(res.data);
-
       res.data.forEach(async (reg) => {
         try {
           const ev = await axios.get(`${API_URL}/api/events/${reg.eventId}`);
@@ -300,13 +231,7 @@ function MyRegistrations() {
                 <CheckCircle size={18} /> Status: {reg.status}
               </p>
               <small style={{ opacity: 0.5 }}>Registered on {new Date(reg.registeredAt).toLocaleString()}</small>
-
-              <button
-                onClick={() => handleCancel(reg._id)}
-                className="btn-danger"
-                disabled={canceling === reg._id}
-                style={{ width: '100%', marginTop: '1.5rem' }}
-              >
+              <button onClick={() => handleCancel(reg._id)} className="btn-danger" disabled={canceling === reg._id} style={{ width: '100%', marginTop: '1.5rem' }}>
                 {canceling === reg._id ? <Loader2 className="loader-spin" size={18} /> : <><XCircle size={18} /> Cancel Registration</>}
               </button>
             </div>
@@ -341,7 +266,7 @@ function Notifications() {
       await axios.put(`${API_URL}/api/notifications/${id}/read`);
       fetchNotifs();
     } catch (err) { toast.error('Failed to update notification'); }
-  }
+  };
 
   const clearAll = async () => {
     if (!window.confirm('Delete all notifications entirely?')) return;
@@ -351,32 +276,27 @@ function Notifications() {
       toast.success('Inbox cleared!');
       fetchNotifs();
     } catch (err) { toast.error('Failed to clear notifications'); } finally { setClearing(false); }
-  }
+  };
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}><Loader2 className="loader-spin" size={48} color="var(--primary)" /></div>;
 
   return (
     <div className="glass-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem' }}>
-        <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Bell /> Notification Center
-        </h2>
+        <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Bell /> Notification Center</h2>
         {notifs.length > 0 && (
           <button onClick={clearAll} disabled={clearing} className="btn-danger" style={{ padding: '0.4rem 1rem' }}>
-            {clearing ? <Loader2 className="loader-spin" size={18} /> : <><Trash2 size={16} /> Clear All</>}
+            {clearing ? <Loader2 className="loader-spin" size={18} /> : 'Clear All'}
           </button>
         )}
       </div>
       <div style={{ marginTop: '1.5rem' }}>
         {notifs.map(n => (
           <div key={n._id} style={{
-            padding: '1.5rem',
-            borderBottom: '1px solid rgba(255,255,255,0.05)',
+            padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
             background: n.read ? 'transparent' : 'rgba(99, 102, 241, 0.1)',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            borderRadius: n.read ? '0' : '8px',
-            marginBottom: '0.5rem',
-            transition: 'background 0.3s'
+            borderRadius: n.read ? '0' : '8px', marginBottom: '0.5rem', transition: 'background 0.3s'
           }}>
             <div>
               <p style={{ margin: '0 0 0.5rem 0', fontWeight: n.read ? 'normal' : 'bold' }}>{n.message}</p>
@@ -405,7 +325,7 @@ function AppContent() {
         <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
         <Route path="/my-events" element={<RequireAuth><MyRegistrations /></RequireAuth>} />
         <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
-        <Route path="/admin" element={<RequireAuth><AdminHub /></RequireAuth>} />
+        <Route path="/admin" element={<RequireAuth><UserManagement /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
       </Routes>
     </div>
