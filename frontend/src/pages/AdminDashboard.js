@@ -36,7 +36,7 @@ function AdminDashboard({ user }) {
 
   const handleDeleteUser = async (userId) => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
-    
+
     setDeletingId(userId);
     try {
       await userService.deleteUser(userId);
@@ -56,7 +56,7 @@ function AdminDashboard({ user }) {
   return (
     <div className="admin-container">
       <div className="admin-header-bg"></div>
-      
+
       <div className="container admin-content">
         <div className="admin-header">
           <h1>Admin Dashboard</h1>
@@ -64,13 +64,13 @@ function AdminDashboard({ user }) {
         </div>
 
         <div className="admin-tabs">
-          <button 
+          <button
             className={`admin-tab-btn ${activeTab === 'users' ? 'active' : ''}`}
             onClick={() => setActiveTab('users')}
           >
             User Management
           </button>
-          <button 
+          <button
             className={`admin-tab-btn ${activeTab === 'events' ? 'active' : ''}`}
             onClick={() => setActiveTab('events')}
           >
@@ -117,7 +117,7 @@ function AdminDashboard({ user }) {
                         <td>{formatDate(u.createdAt)}</td>
                         <td>
                           {u._id !== user._id && (
-                            <button 
+                            <button
                               className="btn-danger-sm"
                               onClick={() => handleDeleteUser(u._id)}
                               disabled={deletingId === u._id}
