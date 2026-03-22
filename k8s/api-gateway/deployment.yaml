@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: sliitprojectmail/event-sync-api-gateway:d364483ec4902e66e40d423feb12485ffef7266f
+        image: sliitprojectmail/event-sync-api-gateway:dbbd94b2963501bb9f8c5d19a23a3fc76a4d5540
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
