@@ -86,9 +86,10 @@ app.delete('/my-registrations/:id', requireAuth, async (req, res) => {
     await Registration.deleteOne({ _id: req.params.id });
     
     try {
+      const cachedEvent = await EventCache.findById(reg.eventId);
       await producer.send({
         topic: 'EventCanceled',
-        messages: [{ value: JSON.stringify({ userId: reg.userId, eventId: reg.eventId }) }]
+        messages: [{ value: JSON.stringify({ userId: reg.userId, eventId: reg.eventId, title: cachedEvent?.title }) }]
       });
     } catch(err) {}
 
@@ -117,6 +118,16 @@ app.post('/', requireAuth, async (req, res) => {
 
     const reg = new Registration({ userId, eventId, status: 'CONFIRMED' });
     await reg.save();
+
+    // Emit EventFull if capacity has just been reached
+    if (cachedEvent.capacity && (regCount + 1 === cachedEvent.capacity)) {
+      try {
+        await producer.send({
+          topic: 'EventFull',
+          messages: [{ value: JSON.stringify({ eventId, title: cachedEvent.title }) }]
+        });
+      } catch (e) { console.error('Kafka error EventFull', e); }
+    }
 
     try {
       await producer.send({

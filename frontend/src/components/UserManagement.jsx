@@ -298,6 +298,14 @@ function NotificationsTab() {
   const [notifs, setNotifs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
+  const [openSections, setOpenSections] = useState({
+    eventFulls: true,
+    newUsers: true,
+    eventRegs: true,
+    others: true
+  });
+
+  const toggleSection = (key) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
 
   const fetchNotifs = async () => {
     try {
@@ -319,6 +327,15 @@ function NotificationsTab() {
     } catch (err) { toast.error('Failed to update notification'); }
   };
 
+  const deleteNotification = async (id) => {
+    if (!window.confirm('Delete this notification?')) return;
+    try {
+      await axios.delete(`${API_URL}/api/notifications/${id}`);
+      fetchNotifs();
+      toast.success('Notification deleted');
+    } catch (err) { toast.error('Failed to delete notification'); }
+  };
+
   const clearAll = async () => {
     if (!window.confirm('Delete all notifications entirely?')) return;
     setClearing(true);
@@ -331,6 +348,60 @@ function NotificationsTab() {
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}><Loader2 className="loader-spin" size={40} color="var(--primary)" /></div>;
 
+  // Group notifications
+  const newUsers = notifs.filter(n => n.type === 'ADMIN_NEW_USER');
+  const eventRegs = notifs.filter(n => n.type === 'ADMIN_EVENT_REG');
+  const eventFulls = notifs.filter(n => n.type === 'ADMIN_EVENT_FULL');
+  const others = notifs.filter(n => !['ADMIN_NEW_USER', 'ADMIN_EVENT_REG', 'ADMIN_EVENT_FULL'].includes(n.type));
+
+  const NotificationList = ({ title, icon, list, sectionKey }) => {
+    if (list.length === 0) return null;
+    const isOpen = openSections[sectionKey];
+    return (
+      <div style={{ marginBottom: '2rem' }}>
+        <h3 
+          onClick={() => toggleSection(sectionKey)}
+          style={{ 
+            borderBottom: '2px solid var(--border-light)', paddingBottom: '0.5rem', marginBottom: '1rem', 
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{icon} {title}</div>
+          <span style={{ fontSize: '0.8rem', opacity: 0.6, background: 'var(--border-light)', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
+            {isOpen ? '▲ Collapse' : '▼ Expand'}
+          </span>
+        </h3>
+        {isOpen && list.map(n => (
+          <div key={n._id} style={{
+            padding: '1.2rem 1.5rem', borderRadius: '8px', marginBottom: '0.5rem',
+            background: n.read ? 'rgba(0,0,0,0.04)' : 'rgba(99,102,241,0.08)',
+            border: `1px solid ${n.read ? 'rgba(0,0,0,0.08)' : 'rgba(99,102,241,0.2)'}`,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', transition: 'background 0.3s'
+          }}>
+            <div>
+              <p style={{ margin: '0 0 0.3rem 0', fontWeight: n.read ? 'normal' : '600' }}>{n.message}</p>
+              <small style={{ opacity: 0.5 }}>{new Date(n.createdAt).toLocaleString()}</small>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              {!n.read && (
+                <button onClick={() => markRead(n._id)} style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.3rem 0.8rem', borderRadius: '50px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  Mark Read
+                </button>
+              )}
+              <button 
+                onClick={() => deleteNotification(n._id)} 
+                title="Delete Notification"
+                style={{ background: 'transparent', border: 'none', color: 'var(--danger)', padding: '0.3rem', cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.6 }}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="admin-card">
       <div className="admin-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -342,25 +413,16 @@ function NotificationsTab() {
         )}
       </div>
       <div style={{ marginTop: '1rem' }}>
-        {notifs.map(n => (
-          <div key={n._id} style={{
-            padding: '1.2rem 1.5rem', borderRadius: '8px', marginBottom: '0.5rem',
-            background: n.read ? 'rgba(0,0,0,0.02)' : 'rgba(99,102,241,0.08)',
-            border: `1px solid ${n.read ? 'var(--border-light)' : 'rgba(99,102,241,0.2)'}`,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', transition: 'background 0.3s'
-          }}>
-            <div>
-              <p style={{ margin: '0 0 0.3rem 0', fontWeight: n.read ? 'normal' : '600' }}>{n.message}</p>
-              <small style={{ opacity: 0.5 }}>{new Date(n.createdAt).toLocaleString()}</small>
-            </div>
-            {!n.read && (
-              <button onClick={() => markRead(n._id)} style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.3rem 0.8rem', borderRadius: '50px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                Mark Read
-              </button>
-            )}
-          </div>
-        ))}
-        {notifs.length === 0 && <p style={{ opacity: 0.6, textAlign: 'center', padding: '2rem' }}>You're all caught up! No notifications.</p>}
+        {notifs.length === 0 ? (
+          <p style={{ opacity: 0.6, textAlign: 'center', padding: '2rem' }}>You're all caught up! No notifications.</p>
+        ) : (
+          <>
+            <NotificationList title="Event Capacity Alerts" icon={<Bell size={18} color="var(--primary)"/>} list={eventFulls} sectionKey="eventFulls" />
+            <NotificationList title="New User Signups" icon={<Users size={18} color="var(--primary)"/>} list={newUsers} sectionKey="newUsers" />
+            <NotificationList title="Event Registrations" icon={<Calendar size={18} color="var(--primary)"/>} list={eventRegs} sectionKey="eventRegs" />
+            <NotificationList title="Other System Notifications" icon={<Bell size={18} color="var(--primary)"/>} list={others} sectionKey="others" />
+          </>
+        )}
       </div>
     </div>
   );

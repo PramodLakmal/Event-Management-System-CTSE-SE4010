@@ -17,10 +17,14 @@ const register = async (req, res) => {
     const user = new User({ name, email, password: hashedPassword, role: isFirstUser ? 'ADMIN' : 'USER' });
     await user.save();
     
+    const totalNonAdminUsers = await User.countDocuments({ role: { $ne: 'ADMIN' } });
+    
     await publishEvent('UserRegistered', {
       userId: user._id.toString(),
       name: user.name,
-      email: user.email
+      email: user.email,
+      role: user.role,
+      totalNonAdminUsers
     });
 
     res.status(201).json({ message: 'User registered' });
@@ -37,6 +41,13 @@ const login = async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
     const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+    
+    await publishEvent('UserLoggedIn', {
+      userId: user._id.toString(),
+      name: user.name,
+      email: user.email
+    });
+
     res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch(e) { res.status(500).json({ error: e.message }); }
 };
