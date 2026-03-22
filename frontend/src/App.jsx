@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } f
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Loader2, Bell, LogOut, XCircle, CheckCircle, Users, UserCircle } from 'lucide-react';
+import { Loader2, Bell, LogOut, XCircle, CheckCircle, Users, UserCircle, Trash2 } from 'lucide-react';
 import './index.css';
 import eventSyncText from './assets/eventSync.png';
 
@@ -247,6 +247,14 @@ function Notifications() {
   const [notifs, setNotifs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
+  const [openSections, setOpenSections] = useState({
+    auth: true,
+    newEvents: true,
+    regs: true,
+    others: true
+  });
+
+  const toggleSection = (key) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
 
   const fetchNotifs = async () => {
     try {
@@ -268,6 +276,14 @@ function Notifications() {
     } catch (err) { toast.error('Failed to update notification'); }
   };
 
+  const deleteNotification = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/api/notifications/${id}`);
+      fetchNotifs();
+      toast.success('Notification removed');
+    } catch (err) { toast.error('Failed to delete notification'); }
+  };
+
   const clearAll = async () => {
     if (!window.confirm('Delete all notifications entirely?')) return;
     setClearing(true);
@@ -280,6 +296,60 @@ function Notifications() {
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}><Loader2 className="loader-spin" size={48} color="var(--primary)" /></div>;
 
+  const authNotifs = notifs.filter(n => n.type === 'USER_AUTH');
+  const newEventNotifs = notifs.filter(n => n.type === 'USER_NEW_EVENT');
+  const regNotifs = notifs.filter(n => n.type === 'USER_EVENT_REG');
+  const otherNotifs = notifs.filter(n => !['USER_AUTH', 'USER_NEW_EVENT', 'USER_EVENT_REG'].includes(n.type));
+
+  const NotificationList = ({ title, icon, list, sectionKey }) => {
+    if (list.length === 0) return null;
+    const isOpen = openSections[sectionKey];
+    return (
+      <div style={{ marginBottom: '2rem' }}>
+        <h3 
+          onClick={() => toggleSection(sectionKey)}
+          style={{ 
+            borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem', marginBottom: '1rem', 
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none',
+            fontSize: '1.1rem'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{icon} {title}</div>
+          <span style={{ fontSize: '0.8rem', opacity: 0.6, background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
+            {isOpen ? '▲ Collapse' : '▼ Expand'}
+          </span>
+        </h3>
+        {isOpen && list.map(n => (
+          <div key={n._id} style={{
+            padding: '1.2rem 1.5rem', borderRadius: '8px', marginBottom: '0.5rem',
+            background: n.read ? 'rgba(0,0,0,0.04)' : 'rgba(99,102,241,0.08)',
+            border: `1px solid ${n.read ? 'rgba(0,0,0,0.08)' : 'rgba(99,102,241,0.2)'}`,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', transition: 'background 0.3s'
+          }}>
+            <div>
+              <p style={{ margin: '0 0 0.3rem 0', fontWeight: n.read ? 'normal' : '600', color: 'var(--text-main)' }}>{n.message}</p>
+              <small style={{ opacity: 0.5, color: 'var(--text-main)' }}>{new Date(n.createdAt).toLocaleString()}</small>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              {!n.read && (
+                <button onClick={() => markRead(n._id)} style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.3rem 0.8rem', borderRadius: '50px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  Mark Read
+                </button>
+              )}
+              <button 
+                onClick={() => deleteNotification(n._id)} 
+                title="Delete Notification"
+                style={{ background: 'transparent', border: 'none', color: 'var(--danger)', padding: '0.3rem', cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.6 }}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="glass-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem' }}>
@@ -291,25 +361,16 @@ function Notifications() {
         )}
       </div>
       <div style={{ marginTop: '1.5rem' }}>
-        {notifs.map(n => (
-          <div key={n._id} style={{
-            padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
-            background: n.read ? 'transparent' : 'rgba(99, 102, 241, 0.1)',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            borderRadius: n.read ? '0' : '8px', marginBottom: '0.5rem', transition: 'background 0.3s'
-          }}>
-            <div>
-              <p style={{ margin: '0 0 0.5rem 0', fontWeight: n.read ? 'normal' : 'bold' }}>{n.message}</p>
-              <small style={{ opacity: 0.5 }}>{new Date(n.createdAt).toLocaleString()}</small>
-            </div>
-            {!n.read && (
-              <button onClick={() => markRead(n._id)} style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.3rem 0.8rem', borderRadius: '50px' }}>
-                Mark Read
-              </button>
-            )}
-          </div>
-        ))}
-        {notifs.length === 0 && <p style={{ opacity: 0.6, textAlign: 'center', padding: '2rem' }}>You're all caught up!</p>}
+        {notifs.length === 0 ? (
+          <p style={{ opacity: 0.6, textAlign: 'center', padding: '2rem' }}>You're all caught up!</p>
+        ) : (
+          <>
+            <NotificationList title="New Event Alerts" icon={<Bell size={18} color="var(--primary)"/>} list={newEventNotifs} sectionKey="newEvents" />
+            <NotificationList title="My Event Registrations" icon={<CheckCircle size={18} color="var(--primary)"/>} list={regNotifs} sectionKey="regs" />
+            <NotificationList title="Account & Security" icon={<UserCircle size={18} color="var(--primary)"/>} list={authNotifs} sectionKey="auth" />
+            <NotificationList title="Other Notifications" icon={<Bell size={18} color="var(--primary)"/>} list={otherNotifs} sectionKey="others" />
+          </>
+        )}
       </div>
     </div>
   );
