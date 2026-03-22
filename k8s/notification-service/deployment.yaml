@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: notification-service
-        image: sliitprojectmail/event-sync-notification-service:e6c66a7e91c83a55e68acd94b1f5af194332368f
+        image: sliitprojectmail/event-sync-notification-service:488a35da8b9a3744d77d77df5262ce5491df99fd
         imagePullPolicy: Always
         ports:
         - containerPort: 3004
