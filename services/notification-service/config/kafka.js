@@ -54,7 +54,7 @@ const handleEventRegistered = async (payload) => {
   const eventTitle = title || `Event ID: ${eventId}`;
   const notifMsg = `You successfully registered for: ${eventTitle}`;
   await (new Notification({ userId, type: 'USER_EVENT_REG', message: notifMsg })).save();
-  try { await sendEventRegistrationEmail(user.email, user.name, eventTitle); } catch(e) { console.error('Email failed', e); }
+  // try { await sendEventRegistrationEmail(user.email, user.name, eventTitle); } catch(e) { console.error('Email failed', e); }
 
   // Admin Notification (No Email)
   const adminMsg = `User ${user.name} (${userId}) registered for: ${eventTitle}`;
@@ -70,7 +70,7 @@ const handleEventCanceled = async (payload) => {
   const eventTitle = title || `Event ID: ${eventId}`;
   const notifMsg = `Your registration for: ${eventTitle} has been cancelled.`;
   await (new Notification({ userId, type: 'USER_EVENT_REG', message: notifMsg })).save();
-  try { await sendEventCancellationEmail(user.email, user.name, eventTitle); } catch(e) { console.error('Email failed', e); }
+  // try { await sendEventCancellationEmail(user.email, user.name, eventTitle); } catch(e) { console.error('Email failed', e); }
 };
 
 const handleEventCreated = async (payload) => {
@@ -89,9 +89,9 @@ const handleEventCreated = async (payload) => {
       const users = await res.json();
       for (const user of users) {
         await (new Notification({ userId: user._id, type: 'USER_NEW_EVENT', message: notifMsg })).save();
-        try { 
-          await sendNewEventBroadcastEmail(user.email, user.name, title, date, location); 
-        } catch(e) { console.error('Email failed for user', user.email); }
+        // try { 
+        //   await sendNewEventBroadcastEmail(user.email, user.name, title, date, location); 
+        // } catch(e) { console.error('Email failed for user', user.email); }
       }
     } else {
       console.error('Failed to fetch users for event broadcast:', await res.text());
@@ -110,6 +110,12 @@ const handleEventFull = async (payload) => {
   await (new Notification({ userId: 'ADMIN', type: 'ADMIN_EVENT_FULL', message: adminMsg })).save();
 };
 
+const handleUserProfileUpdated = async (payload) => {
+  const { userId, name } = payload;
+  const notifMsg = `Hello ${name}, your profile details were updated successfully.`;
+  await (new Notification({ userId, type: 'USER_AUTH', message: notifMsg })).save();
+};
+
 const runKafka = async () => {
   try { 
     await consumer.connect();
@@ -119,6 +125,7 @@ const runKafka = async () => {
     await consumer.subscribe({ topic: 'EventCanceled', fromBeginning: true });
     await consumer.subscribe({ topic: 'EventCreated', fromBeginning: true });
     await consumer.subscribe({ topic: 'EventFull', fromBeginning: true });
+    await consumer.subscribe({ topic: 'UserProfileUpdated', fromBeginning: true });
     
     await consumer.run({
       eachMessage: async ({ topic, message }) => {
@@ -132,6 +139,7 @@ const runKafka = async () => {
           case 'EventCanceled': return await handleEventCanceled(payload);
           case 'EventCreated': return await handleEventCreated(payload);
           case 'EventFull': return await handleEventFull(payload);
+          case 'UserProfileUpdated': return await handleUserProfileUpdated(payload);
         }
       }
     });
