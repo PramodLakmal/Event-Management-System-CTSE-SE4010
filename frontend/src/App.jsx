@@ -121,7 +121,7 @@ function Dashboard() {
 
   return (
     <div>
-      <h2 style={{ marginTop: '1rem' }}>Upcoming..</h2>
+      <h2 style={{ marginTop: '1rem' }}>Upcoming Events</h2>
       {loadingEvents ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}><Loader2 className="loader-spin" size={48} color="var(--primary)" /></div>
       ) : (
