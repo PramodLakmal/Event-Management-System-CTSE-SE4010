@@ -21,6 +21,25 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: event-sync-ingress-kafka-ui
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /kafka-ui(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: kafka-ui
+            port:
+              number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
   name: event-sync-ingress-ui
 spec:
   ingressClassName: nginx
@@ -34,3 +53,4 @@ spec:
             name: frontend-ui
             port:
               number: 80
+
