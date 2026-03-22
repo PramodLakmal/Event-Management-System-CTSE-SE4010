@@ -29,6 +29,8 @@ spec:
           value: "kafka-svc:9092"
         - name: DYNAMIC_CONFIG_ENABLED
           value: "true"
+        - name: SERVER_SERVLET_CONTEXT_PATH
+          value: "/kafka-ui"
         resources:
           requests:
             memory: "256Mi"

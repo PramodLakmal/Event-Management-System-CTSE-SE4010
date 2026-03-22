@@ -22,15 +22,13 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: event-sync-ingress-kafka-ui
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
   - http:
       paths:
-      - path: /kafka-ui(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /kafka-ui
+        pathType: Prefix
         backend:
           service:
             name: kafka-ui
