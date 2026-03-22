@@ -32,6 +32,31 @@ spec:
               key: MONGO_URI_NOTIFICATION
         - name: KAFKA_BROKER
           value: "kafka-svc:9092"
+        - name: SMTP_HOST
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: SMTP_HOST
+        - name: SMTP_PORT
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: SMTP_PORT
+        - name: SMTP_USER
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: SMTP_USER
+        - name: SMTP_PASS
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: SMTP_PASS
+        - name: EMAIL_FROM
+          valueFrom:
+            secretKeyRef:
+              name: event-sync-secrets
+              key: EMAIL_FROM
         resources:
           requests:
             memory: "128Mi"
