@@ -440,30 +440,32 @@ function AdminDashboard() {
     <div className="admin-container">
       <div className="admin-header-bg"></div>
       <div className="container admin-content">
-        <div className="admin-header">
-          <h1>Admin Dashboard</h1>
-          <p>Welcome back, {user?.name}. Manage your platform from here.</p>
+        <div className="admin-header-wrapper">
+          <div className="admin-header">
+            <h1>Admin Dashboard</h1>
+            <p>Welcome back, {user?.name}. Manage your platform from here.</p>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ padding: '1.2rem 2rem', background: 'var(--primary)', color: 'white', borderRadius: '18px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(26,123,122,0.3)', border: '1px solid rgba(255,255,255,0.2)' }}>
+              <span style={{ fontSize: '1.8rem', fontWeight: '800', lineHeight: '1' }}>{allUsers.length}</span>
+              <span style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '0.2rem', fontWeight: '500' }}>Total Users</span>
+            </div>
+            <div style={{ padding: '1.2rem 2rem', background: 'linear-gradient(135deg, var(--accent) 0%, #ff8a65 100%)', color: 'white', borderRadius: '18px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(243,115,79,0.3)', border: '1px solid rgba(255,255,255,0.2)' }}>
+              <span style={{ fontSize: '1.8rem', fontWeight: '800', lineHeight: '1', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ width: '12px', height: '12px', background: '#fff', borderRadius: '50%', boxShadow: '0 0 10px #fff', animation: 'pulse 2s infinite' }}></span> Active
+              </span>
+              <span style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '0.2rem', fontWeight: '500' }}>System Status</span>
+            </div>
+          </div>
         </div>
 
         {/* Tab Navigation */}
-        <div style={{
-          display: 'flex', gap: '0.5rem', marginBottom: '1.5rem',
-          backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: '12px',
-          padding: '0.4rem', border: '1px solid rgba(255,255,255,0.12)', flexWrap: 'wrap'
-        }}>
+        <div className="admin-tabs-container">
           {tabs.map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              style={{
-                flex: '1 1 auto',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem',
-                padding: '0.65rem 1.2rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                fontSize: '0.9rem', fontWeight: '600', transition: 'all 0.2s',
-                background: activeTab === tab.key ? 'var(--primary)' : 'transparent',
-                color: activeTab === tab.key ? 'white' : 'var(--text-secondary)',
-                boxShadow: activeTab === tab.key ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
-              }}
+              className={`admin-tab-btn ${activeTab === tab.key ? 'admin-tab-btn-active' : ''}`}
             >
               {tab.icon} {tab.label}
             </button>
