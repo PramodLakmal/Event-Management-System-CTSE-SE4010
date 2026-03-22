@@ -35,6 +35,8 @@ spec:
             secretKeyRef:
               name: event-sync-secrets
               key: JWT_SECRET
+        - name: KAFKA_BROKER
+          value: "kafka-svc:9092"
         resources:
           requests:
             memory: "128Mi"
