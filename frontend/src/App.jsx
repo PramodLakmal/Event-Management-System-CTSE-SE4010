@@ -333,7 +333,7 @@ function Notifications() {
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               {!n.read && (
                 <button onClick={() => markRead(n._id)} style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.3rem 0.8rem', borderRadius: '50px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  Mark Read
+                  Mark as Read
                 </button>
               )}
               <button 
