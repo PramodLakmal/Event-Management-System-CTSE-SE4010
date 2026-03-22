@@ -52,7 +52,22 @@ function ProfilePage() {
     setSaving(true);
     try {
       if (user && user.id) {
-        // Mock update profile endpoint as requested visually without altering backend routes
+        // Send actual API request to update profile
+        const { name, phone, address } = profileData;
+        
+        let axiosConfig = {};
+        
+        // If the token is kept in localStorage, include it as this route requires auth
+        const token = localStorage.getItem('token');
+        if (token) {
+           axiosConfig = {
+               headers: {
+                   Authorization: `Bearer ${token}`
+               }
+           };
+        }
+
+        await axios.put(`${API_URL}/api/users/profile`, { name, phone, address }, axiosConfig);
         toast.success('Profile updated successfully!');
       }
     } catch (error) {
