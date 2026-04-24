@@ -58,7 +58,7 @@ function LoginPage() {
           <div style={{ marginBottom: '2rem', display: 'inline-flex', background: 'white', borderRadius: '24px', padding: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }}>
             <img src={eventSyncLogo} alt="EventSync Mark" style={{ height: '70px', width: '70px', objectFit: 'contain' }} />
           </div>
-          <h1 className="banner-title">Welcome to the future of events</h1>
+          <h1 className="banner-title">Welcome to the future of events.</h1>
           <p className="banner-subtitle">Create, manage, and discover extraordinary moments with our premium platform.</p>
         </div>
       </div>
