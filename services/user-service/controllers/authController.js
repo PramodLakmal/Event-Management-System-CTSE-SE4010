@@ -16,7 +16,7 @@ const register = async (req, res) => {
     
     const user = new User({ name, email, password: hashedPassword, role: isFirstUser ? 'ADMIN' : 'USER' });
     await user.save();
-    //Test comment
+    //Test comme
     
     const totalNonAdminUsers = await User.countDocuments({ role: { $ne: 'ADMIN' } });
     
